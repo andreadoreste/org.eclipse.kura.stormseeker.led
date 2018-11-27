@@ -28,9 +28,10 @@ public class LedStatus implements ConfigurableComponent, CloudConnectionListener
 	
 	//Property Name
 	private static final String THRESHOLD = "threshold.value"; 
+	private static final String NAME = "name";
 	
+	//private Map<String, Object> properties;
 	private Map<String, Object> properties;
-	
 	private boolean ledStatus;
 	
 	private CloudSubscriber cloudSubscriber;
@@ -135,9 +136,11 @@ public class LedStatus implements ConfigurableComponent, CloudConnectionListener
 	//Method called everytime a new message arrives
 	@Override
 	public void onMessageArrived(KuraMessage message) {
+		//Receive the message
 		logReceivedMessage(message);
-		// TODO Auto-generated method stub
-
+		//Publish the led.status
+		//doPublish();
+		doUpdate(true);
 	}
 	
 	//Private Methods Subscriber
@@ -154,12 +157,19 @@ public class LedStatus implements ConfigurableComponent, CloudConnectionListener
 				s_logger.info("Message metric: {}, value: {}", entry.getKey(), entry.getValue());
 				
 				//Verify if the temp value is bigger than the threshold
-				if(entry.getKey()=="value") {
-					float temp = (Float) entry.getValue(); 
-					float thr = (Float)this.properties.get(THRESHOLD);
+				if(entry.getKey().equals("value")) {
+					//float temp = Float.parseFloat(entry.getValue());//entry.getValue(); 
+					//float temp = (entry.getValue()).floatValue();
+					//float temp = (float) (entry.getValue()).toString();
+					float temp = Float.parseFloat((entry.getValue().toString()));
+					float thr = (float)this.properties.get(THRESHOLD);
+					s_logger.info("temp: {}, threshold: {}", temp,thr);
 					if (temp>thr) {
 						this.ledStatus = true;
-					}
+					}else {
+						this.ledStatus = false;	
+						}
+					
 				}
 			
 			}
@@ -170,15 +180,15 @@ public class LedStatus implements ConfigurableComponent, CloudConnectionListener
 	
 	private void doUpdate(boolean onUpdate) {
 		//cancel a current worker handle if one is active
-		if (this.handle != null) {
-			this.handle.cancel(true);
-		}
+		//if (this.handle != null) {
+		//	this.handle.cancel(true);
+		//}
 
 		//reset the temperature to the initial value
-		if (!onUpdate) {
+		//if (!onUpdate) {
 			//verify if there is a need for change
-			this.ledStatus = false;
-		}
+		//	this.ledStatus = false;
+		//}
 
 		//change
 		int pubrate =5;
@@ -198,6 +208,9 @@ public class LedStatus implements ConfigurableComponent, CloudConnectionListener
 		//insert method to check temperature
 		//this.temperature = 10;
 
+		//test
+		String name = (String) this.properties.get(NAME);
+		
 		if (this.cloudPublisher ==null) {
 			//if(nonNull(this.cloudPublisher)) {
 			s_logger.info("No cloud publisher selected. Temp Cannot publish!");
@@ -209,7 +222,7 @@ public class LedStatus implements ConfigurableComponent, CloudConnectionListener
 
 		payload.setTimestamp(new Date());
 		payload.addMetric("status", this.ledStatus);
-
+		payload.addMetric("name", name);
 		//Create Kura Message
 		KuraMessage message = new KuraMessage(payload);
 
