@@ -161,15 +161,17 @@ public class LedStatus implements ConfigurableComponent, CloudConnectionListener
 					//float temp = Float.parseFloat(entry.getValue());//entry.getValue(); 
 					//float temp = (entry.getValue()).floatValue();
 					//float temp = (float) (entry.getValue()).toString();
-					float temp = Float.parseFloat((entry.getValue().toString()));
-					float thr = (float)this.properties.get(THRESHOLD);
-					s_logger.info("temp: {}, threshold: {}", temp,thr);
-					if (temp>thr) {
+					float value = Float.parseFloat((entry.getValue().toString()));
+					float thr = (float) this.properties.get(THRESHOLD);
+					s_logger.info("value: {}, threshold: {}", value,thr);
+					if (value>thr) {
+						s_logger.info("value>thr");
 						this.ledStatus = true;
 					}else {
+						s_logger.info("value>thr else");
 						this.ledStatus = false;	
 						}
-					
+					//s_logger.info("led_status:{}", this.ledStatus);
 				}
 			
 			}
@@ -191,12 +193,18 @@ public class LedStatus implements ConfigurableComponent, CloudConnectionListener
 		//}
 
 		//change
-		int pubrate =5;
+		//int pubrate =5;
+		int pubrate = 10;
+		String name_2 = (String) this.properties.get(NAME);
 		this.handle = this.worker.scheduleAtFixedRate(new Runnable() {
-
+					
 			@Override
 			public void run() {
-				Thread.currentThread().setName(getClass().getSimpleName());
+				
+				
+				String thrName = getClass().getSimpleName()+ name_2;	
+				//Thread.currentThread().setName(getClass().getSimpleName());
+				Thread.currentThread().setName(thrName);
 				doPublish();
 			}
 		}, 0, pubrate, TimeUnit.SECONDS);
@@ -221,7 +229,9 @@ public class LedStatus implements ConfigurableComponent, CloudConnectionListener
 		KuraPayload payload = new KuraPayload();
 
 		payload.setTimestamp(new Date());
-		payload.addMetric("status", this.ledStatus);
+		boolean fodase = this.ledStatus;
+		s_logger.info("doPublish status: {}",fodase);
+		payload.addMetric("doPublish status", fodase);
 		payload.addMetric("name", name);
 		//Create Kura Message
 		KuraMessage message = new KuraMessage(payload);
@@ -229,7 +239,8 @@ public class LedStatus implements ConfigurableComponent, CloudConnectionListener
 		//Publish the message
 		try {
 			this.cloudPublisher.publish(message);
-			s_logger.info("Publish message: {}", payload);
+			//s_logger.info("Publish message: {}", payload);
+			s_logger.info("Publish message: ");
 		} catch (Exception e) {
 			s_logger.error("Cannot publish message: {}", message, e);
 		}
